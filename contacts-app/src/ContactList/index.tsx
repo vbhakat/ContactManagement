@@ -1,4 +1,21 @@
-import React,{useEffect,useState} from 'react';
+import React, { useEffect, useState } from 'react';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+    IconButton,
+    Stack,
+    styled,
+    Box,
+    Typography,
+    Button
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import ContactForm from '../ContactForm'
 
 interface Contact {
@@ -9,95 +26,139 @@ interface Contact {
     address: string;
 }
 
-const ContactList: React.FC=()=>{
-    const [contacts,setContacts]=useState<Contact[]>([]);
-    const [contactUpdate,setContactUpdate]=useState<Contact|null>(null);
-    const [showModal,setShowModal]=useState<boolean>(false);
-    const [action,setAction]=useState<'add'|'update'>('add');
-    const fetchUrl='http://localhost:4000/contacts';
-    
-    const handleGetCall=()=>{
+const ContactList: React.FC = () => {
+    const [contacts, setContacts] = useState<Contact[]>([]);
+    const [contactUpdate, setContactUpdate] = useState<Contact | null>(null);
+    const [showModal, setShowModal] = useState<boolean>(false);
+    const [action, setAction] = useState<'add' | 'update'>('add');
+    const [showHome, setShowHome] = useState<boolean>(true);
+    const fetchUrl = 'http://localhost:4000/contacts';
+
+    const handleGetCall = () => {
         fetch(`${fetchUrl}`)
-        .then(response=>response.json())
-        .then(data=>setContacts(data))
-        .catch(err => console.error('Error',err));
-    } 
-    const handleDeleteCall=(id:number)=>{
-        fetch(`${fetchUrl}/${id}`,{
-            method:'Delete',
-        })
-        .then( handleGetCall)
-        .catch(err => console.error('Error',err));
+            .then(response => response.json())
+            .then(data => setContacts(data))
+            .catch(err => console.error('Error', err));
     }
-    const handlePutCall=(contacts:Contact)=>{
+    const handleDeleteCall = (id: number) => {
+        fetch(`${fetchUrl}/${id}`, {
+            method: 'Delete',
+        })
+            .then(handleGetCall)
+            .catch(err => console.error('Error', err));
+    }
+    const handlePutCall = (contacts: Contact) => {
         setShowModal(false);
         setContactUpdate(null);
         setAction('add');
-        fetch(`${fetchUrl}/${contacts.id}`,{
-            method:'PUT',
-            body:JSON.stringify(contacts),
-            headers:{
-                'Content-type':'application/json; charset=UTF-8',
+        setShowHome(true);
+        fetch(`${fetchUrl}/${contacts.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(contacts),
+            headers: {
+                'Content-type': 'application/json; charset=UTF-8',
             }
         })
-        .then( handleGetCall)
-        .catch(err => console.error('Error',err));
+            .then(handleGetCall)
+            .catch(err => console.error('Error', err));
     }
-    const handePostCall=(newContact:Contact)=>{
+    const handePostCall = (newContact: Contact) => {
         setShowModal(false);
-        const getLatestId=contacts.reduce((maxId,contact)=>Math.max(maxId,contact.id),0);
-        const newContactWithID={...newContact,id:getLatestId+1};
-        fetch(`${fetchUrl}`,{
-            method:'POST',
-            body:JSON.stringify(newContactWithID),
-            headers:{
-                'Content-type':'application/json; charset=UTF-8',
+        setShowHome(true);
+        const getLatestId = contacts.reduce((maxId, contact) => Math.max(maxId, contact.id), 0);
+        const newContactWithID = { ...newContact, id: getLatestId + 1 };
+        fetch(`${fetchUrl}`, {
+            method: 'POST',
+            body: JSON.stringify(newContactWithID),
+            headers: {
+                'Content-type': 'application/json; charset=UTF-8',
             }
         })
-        .then( handleGetCall)
-        .catch(err => console.error('Error',err));
+            .then(handleGetCall)
+            .catch(err => console.error('Error', err));
     }
-    const handleAddClick = () =>{        
+    const handleAddClick = () => {
+        setShowHome(false);
         setShowModal(true);
     }
-    const handleUpdateClick=(contact:Contact) =>{
+    const handleHomeClick = () => {
+        setShowHome(true);
+        setShowModal(false);
+    }
+    const handleUpdateClick = (contact: Contact) => {
         setContactUpdate(contact);
         setAction('update');
         setShowModal(true);
     }
-    useEffect(()=>{
+    useEffect(() => {
         handleGetCall();
-    },[]);
-    return(
+    }, []);
+    const Item = styled(Paper)(({ theme }) => ({
+        backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
+        ...theme.typography.body2,
+        padding: theme.spacing(1),
+        textAlign: 'center',
+        color: theme.palette.text.secondary,
+    }));
+    return (
         <>
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Address</th>
-                    <th>Delete</th>
-                    <th>Edit</th>
-                </tr>
-            </thead>
-            <tbody>
-                {contacts.map((contact)=>(
-                    <tr key={contact.id}>
-                        <td>{contact.name}</td>
-                        <td>{contact.email}</td>
-                        <td>{contact.phone}</td>
-                        <td>{contact.address}</td>
-                        <td><button onClick={()=>handleDeleteCall(contact.id)}>Delete this Contact</button> </td>
-                        <td><button onClick={()=>handleUpdateClick(contact)}>Edit this Contact</button> </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-        <button onClick={()=>handleAddClick()}>Add New Contacts</button> 
-        {showModal && <ContactForm contactToUpdate={contactUpdate} onSubmit={action==='add'?handePostCall:handlePutCall}/>}       
+            {showModal && <ContactForm action={action} openModal={showModal} contactToUpdate={contactUpdate} onSubmit={action === 'add' ? handePostCall : handlePutCall} />}
+            <Stack spacing={2}>
+                <Item>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <h1>Contact Management System</h1>
+                    </div>
+                </Item>
+                <Item>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', textAlign: 'center', backgroundColor: '#6c757d' }}>
+                        <Typography sx={{ minWidth: 100 }}><Button sx={{ color: '#000' }} onClick={() => handleHomeClick()} aria-label="home">Home</Button></Typography>
+                        <Typography sx={{ minWidth: 100 }}><Button sx={{ color: '#000' }} onClick={() => handleAddClick()} aria-label='addnew'>Create</Button></Typography>
+                    </Box>
+                </Item>
+                <Item><Paper elevation={5}>
+                    {showHome &&
+                        (<TableContainer >
+                            <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell sx={{ fontWeight: 800 }}>Name</TableCell>
+                                        <TableCell sx={{ fontWeight: 800 }} align="right">Email</TableCell>
+                                        <TableCell sx={{ fontWeight: 800 }} align="right">Phone</TableCell>
+                                        <TableCell sx={{ fontWeight: 800 }} align="right">Address</TableCell>
+                                        <TableCell sx={{ fontWeight: 800 }} align="right">Update</TableCell>
+                                        <TableCell sx={{ fontWeight: 800 }} align="right">Delete</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {contacts.map((row) => (
+                                        <TableRow
+                                            key={row.id}
+                                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                        >
+                                            <TableCell component="th" scope="row">
+                                                {row.name}
+                                            </TableCell>
+                                            <TableCell align="right">{row.email}</TableCell>
+                                            <TableCell align="right">{row.phone}</TableCell>
+                                            <TableCell align="right">{row.address}</TableCell>
+                                            <TableCell align="right"><IconButton aria-label="edit" onClick={() => handleUpdateClick(row)}>
+                                                <EditIcon />
+                                            </IconButton></TableCell>
+                                            <TableCell align="right"><IconButton aria-label="delete" onClick={() => handleDeleteCall(row.id)} >
+                                                <DeleteIcon />
+                                            </IconButton></TableCell>
+                                        </TableRow>
+                                    ))}
+
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                        )}
+                </Paper>
+                </Item>
+            </Stack>
         </>
     );
 }
 
-export {ContactList};
+export { ContactList };
