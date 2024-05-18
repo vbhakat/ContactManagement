@@ -6,14 +6,16 @@ import {
     Button,
     TextField,
     Alert,
-    AlertTitle
+    AlertTitle,
+    IconButton
 } from '@mui/material';
-
+import CloseIcon from '@mui/icons-material/Close';
 export interface ContactFormProps {
     contactToUpdate: Contact | null;
     onSubmit: (contact: Contact) => void;
     openModal: boolean;
     action: string;
+    setShowModal: (show: boolean) => void;
 }
 
 export interface Contact {
@@ -24,8 +26,15 @@ export interface Contact {
     address: string;
 }
 
-const ContactForm: React.FC<ContactFormProps> = ({ openModal, contactToUpdate, onSubmit,action }) => {
+const ContactForm: React.FC<ContactFormProps> = ({ setShowModal, openModal, contactToUpdate, onSubmit, action }) => {
     const [contact, setContact] = useState<Contact>({
+        id: 0,
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+    });
+    const [trimmedContact, setTrimmedContact] = useState<Contact>({
         id: 0,
         name: '',
         email: '',
@@ -75,7 +84,6 @@ const ContactForm: React.FC<ContactFormProps> = ({ openModal, contactToUpdate, o
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setContact({ ...contact, [name]: value });
-
         let valid = true;
 
         switch (name) {
@@ -113,19 +121,40 @@ const ContactForm: React.FC<ContactFormProps> = ({ openModal, contactToUpdate, o
                 break;
         }
     };
-
+    const handleOnBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setTrimmedContact({ ...contact, [name]: typeof(value)==='string'?value.trim():value });
+    }
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const isValid = validateName(contact.name) && validateEmail(contact.email) && validatePhone(contact.phone) && validateAddress(contact.address);
-        if (isValid) {
-            onSubmit(contact);
-        }
-        else
-        {
+        const isNameValid = validateName(contact.name);
+        const isEmailValid = validateEmail(contact.email);
+        const isPhoneValid = validatePhone(contact.phone);
+        const isAddressValid = validateAddress(contact.address);
+
+        setErrors({
+            name: !isNameValid,
+            email: !isEmailValid,
+            phone: !isPhoneValid,
+            address: !isAddressValid,
+        });
+
+        setHelperTexts({
+            name: isNameValid ? 'Please enter Contact\'s Name' : 'Name cannot be empty',
+            email: isEmailValid ? 'Please enter Contact\'s Email' : 'Invalid email address',
+            phone: isPhoneValid ? 'Please enter Contact\'s Phone Number' : 'Invalid phone number. Must be 10 digits.',
+            address: isAddressValid ? 'Please enter Contact\'s Address' : 'Address cannot be empty',
+        });
+
+        if (isNameValid && isEmailValid && isPhoneValid && isAddressValid) {
+            onSubmit(trimmedContact);
+        } else {
             setAlert({ visible: true, message: 'Please fix the validation errors before submitting.' });
         }
     };
-
+    const onClose = () => {
+        setShowModal(false);
+    }
     const style = {
         position: 'absolute',
         top: '50%',
@@ -138,80 +167,97 @@ const ContactForm: React.FC<ContactFormProps> = ({ openModal, contactToUpdate, o
         p: 4,
     };
 
-    return (                
+    return (
         <Modal
             open={openModal}
+            onClose={onClose}
             aria-labelledby="modal-modal-title"
             aria-describedby="modal-modal-description"
         >
             <Box sx={style}>
-            {alert.visible && (
-                        <Alert severity="error" onClose={() => setAlert({ visible: false, message: '' })}>
-                            <AlertTitle>Error</AlertTitle>
-                            {alert.message}
-                        </Alert>
-                    )}
-                <Typography id="modal-modal-title" variant="h6" component="h2" sx={{display: 'flex', justifyContent: 'center' }}>
+                <IconButton
+                    aria-label="close"
+                    onClick={onClose}
+                    sx={{
+                        position: 'absolute',
+                        right: 8,
+                        top: 8,
+                        color: (theme) => theme.palette.grey[500],
+                    }}
+                >
+                    <CloseIcon />
+                </IconButton>
+                {alert.visible && (
+                    <Alert severity="error" onClose={() => setAlert({ visible: false, message: '' })}>
+                        <AlertTitle>Error</AlertTitle>
+                        {alert.message}
+                    </Alert>
+                )}
+                <Typography id="modal-modal-title" variant="h6" component="h2" sx={{ display: 'flex', justifyContent: 'center' }}>
                     Contact Form
                 </Typography>
-                <Box id="modal-modal-description" sx={{ mt: 2 }}>                   
-                        <Box
-                            component="form"
-                            sx={{
-                                '& > :not(style)': { m: 1 },
-                            }}
-                            noValidate
-                            autoComplete="off"
-                            onSubmit={handleSubmit}
-                        >
-                            <TextField
-                                fullWidth
-                                type='text'
-                                name="name"
-                                value={contact.name}
-                                onChange={handleInputChange}
-                                placeholder="Name"
-                                variant="filled"
-                                error={errors.name}
-                                helperText={helperTexts.name}
-                            />
-                            <TextField
-                                fullWidth
-                                type='email'
-                                name="email"
-                                value={contact.email}
-                                onChange={handleInputChange}
-                                placeholder="Email"
-                                variant="filled"
-                                error={errors.email}
-                                helperText={helperTexts.email}
-                            />
-                            <TextField
-                                fullWidth
-                                type='text'
-                                name="phone"
-                                value={contact.phone}
-                                onChange={handleInputChange}
-                                placeholder="Phone"
-                                variant="filled"
-                                error={errors.phone}
-                                helperText={helperTexts.phone}
-                            />
-                            <TextField
-                                fullWidth
-                                type='text'
-                                name="address"
-                                value={contact.address}
-                                onChange={handleInputChange}
-                                placeholder="Address"
-                                variant="filled"
-                                error={errors.address}
-                                helperText={helperTexts.address}
-                            />
-                            <Button type='submit' variant="contained" color="primary">
-                               {action==='add'? 'Add New Contact' :'Update Contact'}
-                            </Button>
-                        </Box>                    
+                <Box id="modal-modal-description" sx={{ mt: 2 }}>
+                    <Box
+                        component="form"
+                        sx={{
+                            '& > :not(style)': { m: 1 },
+                        }}
+                        noValidate
+                        autoComplete="off"
+                        onSubmit={handleSubmit}
+                    >
+                        <TextField
+                            fullWidth
+                            type='text'
+                            name="name"
+                            value={contact.name}
+                            onChange={handleInputChange}
+                            onBlur={handleOnBlur}
+                            placeholder="Name"
+                            variant="filled"
+                            error={errors.name}
+                            helperText={helperTexts.name}
+                        />
+                        <TextField
+                            fullWidth
+                            type='email'
+                            name="email"
+                            value={contact.email}
+                            onChange={handleInputChange}
+                            onBlur={handleOnBlur}
+                            placeholder="Email"
+                            variant="filled"
+                            error={errors.email}
+                            helperText={helperTexts.email}
+                        />
+                        <TextField
+                            fullWidth
+                            type='text'
+                            name="phone"
+                            value={contact.phone}
+                            onChange={handleInputChange}
+                            onBlur={handleOnBlur}
+                            placeholder="Phone"
+                            variant="filled"
+                            error={errors.phone}
+                            helperText={helperTexts.phone}
+                        />
+                        <TextField
+                            fullWidth
+                            type='text'
+                            name="address"
+                            value={contact.address}
+                            onChange={handleInputChange}
+                            onBlur={handleOnBlur}
+                            placeholder="Address"
+                            variant="filled"
+                            error={errors.address}
+                            helperText={helperTexts.address}
+                        />
+                        <Button type='submit' variant="contained" color="primary">
+                            {action === 'add' ? 'Add New Contact' : 'Update Contact'}
+                        </Button>
+                    </Box>
                 </Box>
             </Box>
         </Modal>

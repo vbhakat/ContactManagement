@@ -31,7 +31,6 @@ const ContactList: React.FC = () => {
     const [contactUpdate, setContactUpdate] = useState<Contact | null>(null);
     const [showModal, setShowModal] = useState<boolean>(false);
     const [action, setAction] = useState<'add' | 'update'>('add');
-    const [showHome, setShowHome] = useState<boolean>(true);
     const fetchUrl = 'http://localhost:4000/contacts';
 
     const handleGetCall = () => {
@@ -47,24 +46,25 @@ const ContactList: React.FC = () => {
             .then(handleGetCall)
             .catch(err => console.error('Error', err));
     }
-    const handlePutCall = (contacts: Contact) => {
+    const handlePutCall = (updatedContacts: Contact) => {
+        const existingContact = contacts.find(contact => contact.id === updatedContacts.id);
         setShowModal(false);
         setContactUpdate(null);
         setAction('add');
-        setShowHome(true);
-        fetch(`${fetchUrl}/${contacts.id}`, {
-            method: 'PUT',
-            body: JSON.stringify(contacts),
-            headers: {
-                'Content-type': 'application/json; charset=UTF-8',
-            }
-        })
-            .then(handleGetCall)
-            .catch(err => console.error('Error', err));
+        if (existingContact && !isContactUpdated(existingContact, updatedContacts)) {            
+            fetch(`${fetchUrl}/${updatedContacts.id}`, {
+                method: 'PUT',
+                body: JSON.stringify(updatedContacts),
+                headers: {
+                    'Content-type': 'application/json; charset=UTF-8',
+                }
+            })
+                .then(handleGetCall)
+                .catch(err => console.error('Error', err));
+        }
     }
     const handePostCall = (newContact: Contact) => {
         setShowModal(false);
-        setShowHome(true);
         const getLatestId = contacts.reduce((maxId, contact) => Math.max(maxId, contact.id), 0);
         const newContactWithID = { ...newContact, id: getLatestId + 1 };
         fetch(`${fetchUrl}`, {
@@ -78,17 +78,21 @@ const ContactList: React.FC = () => {
             .catch(err => console.error('Error', err));
     }
     const handleAddClick = () => {
-        setShowHome(false);
         setShowModal(true);
     }
     const handleHomeClick = () => {
-        setShowHome(true);
         setShowModal(false);
     }
     const handleUpdateClick = (contact: Contact) => {
         setContactUpdate(contact);
         setAction('update');
         setShowModal(true);
+    }
+    const isContactUpdated = (existingContact: Contact, updatedContacts:Contact) => {
+        return existingContact.name === updatedContacts.name &&
+            existingContact.email === updatedContacts.email &&
+            existingContact.phone === updatedContacts.phone &&
+            existingContact.address === updatedContacts.address;
     }
     useEffect(() => {
         handleGetCall();
@@ -101,63 +105,59 @@ const ContactList: React.FC = () => {
         color: theme.palette.text.secondary,
     }));
     return (
-        <>
-            {showModal && <ContactForm action={action} openModal={showModal} contactToUpdate={contactUpdate} onSubmit={action === 'add' ? handePostCall : handlePutCall} />}
-            <Stack spacing={2}>
-                <Item>
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                        <h1>Contact Management System</h1>
-                    </div>
-                </Item>
-                <Item>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', textAlign: 'center', backgroundColor: '#6c757d' }}>
-                        <Typography sx={{ minWidth: 100 }}><Button sx={{ color: '#000' }} onClick={() => handleHomeClick()} aria-label="home">Home</Button></Typography>
-                        <Typography sx={{ minWidth: 100 }}><Button sx={{ color: '#000' }} onClick={() => handleAddClick()} aria-label='addnew'>Create</Button></Typography>
-                    </Box>
-                </Item>
-                <Item><Paper elevation={5}>
-                    {showHome &&
-                        (<TableContainer >
-                            <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell sx={{ fontWeight: 800 }}>Name</TableCell>
-                                        <TableCell sx={{ fontWeight: 800 }} align="right">Email</TableCell>
-                                        <TableCell sx={{ fontWeight: 800 }} align="right">Phone</TableCell>
-                                        <TableCell sx={{ fontWeight: 800 }} align="right">Address</TableCell>
-                                        <TableCell sx={{ fontWeight: 800 }} align="right">Update</TableCell>
-                                        <TableCell sx={{ fontWeight: 800 }} align="right">Delete</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {contacts.map((row) => (
-                                        <TableRow
-                                            key={row.id}
-                                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                        >
-                                            <TableCell component="th" scope="row">
-                                                {row.name}
-                                            </TableCell>
-                                            <TableCell align="right">{row.email}</TableCell>
-                                            <TableCell align="right">{row.phone}</TableCell>
-                                            <TableCell align="right">{row.address}</TableCell>
-                                            <TableCell align="right"><IconButton aria-label="edit" onClick={() => handleUpdateClick(row)}>
-                                                <EditIcon />
-                                            </IconButton></TableCell>
-                                            <TableCell align="right"><IconButton aria-label="delete" onClick={() => handleDeleteCall(row.id)} >
-                                                <DeleteIcon />
-                                            </IconButton></TableCell>
-                                        </TableRow>
-                                    ))}
+        <Stack spacing={2}>
+            <Item>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <h1>Contact Management System</h1>
+                </div>
+            </Item>
+            <Item>
+                <Box sx={{ display: 'flex', justifyContent: 'center', textAlign: 'center', backgroundColor: '#6c757d' }}>
+                    <Typography sx={{ minWidth: 100 }}><Button sx={{ color: '#000' }} onClick={() => handleHomeClick()} aria-label="home">Home</Button></Typography>
+                    <Typography sx={{ minWidth: 100 }}><Button sx={{ color: '#000' }} onClick={() => handleAddClick()} aria-label='addnew'>Create</Button></Typography>
+                </Box>
+            </Item>
+            <Item><Paper elevation={5}>
+                {showModal && <ContactForm setShowModal={setShowModal} action={action} openModal={showModal} contactToUpdate={contactUpdate} onSubmit={action === 'add' ? handePostCall : handlePutCall} />}
+                <TableContainer >
+                    <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ fontWeight: 800 }}>Name</TableCell>
+                                <TableCell sx={{ fontWeight: 800 }} align="right">Email</TableCell>
+                                <TableCell sx={{ fontWeight: 800 }} align="right">Phone</TableCell>
+                                <TableCell sx={{ fontWeight: 800 }} align="right">Address</TableCell>
+                                <TableCell sx={{ fontWeight: 800 }} align="right">Update</TableCell>
+                                <TableCell sx={{ fontWeight: 800 }} align="right">Delete</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {contacts.map((row) => (
+                                <TableRow
+                                    key={row.id}
+                                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                >
+                                    <TableCell component="th" scope="row">
+                                        {row.name}
+                                    </TableCell>
+                                    <TableCell align="right">{row.email}</TableCell>
+                                    <TableCell align="right">{row.phone}</TableCell>
+                                    <TableCell align="right">{row.address}</TableCell>
+                                    <TableCell align="right"><IconButton aria-label="edit" onClick={() => handleUpdateClick(row)}>
+                                        <EditIcon />
+                                    </IconButton></TableCell>
+                                    <TableCell align="right"><IconButton aria-label="delete" onClick={() => handleDeleteCall(row.id)} >
+                                        <DeleteIcon />
+                                    </IconButton></TableCell>
+                                </TableRow>
+                            ))}
 
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                        )}
-                </Paper>
-                </Item>
-            </Stack>
-        </>
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Paper>
+            </Item>
+        </Stack>
     );
 }
 

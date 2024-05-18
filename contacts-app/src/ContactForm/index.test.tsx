@@ -17,7 +17,8 @@ describe('ContactForm', () => {
             openModal: true,
             contactToUpdate: null,
             onSubmit: mockOnSubmit,
-            action: 'add'
+            action: 'add',
+            setShowModal: jest.fn(),
         };
         return render(<ContactForm {...defaultProps} {...props} />);
     };
