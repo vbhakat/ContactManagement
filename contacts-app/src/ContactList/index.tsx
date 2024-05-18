@@ -12,7 +12,7 @@ import {
     styled,
     Box,
     Typography,
-    Button
+    Button, CircularProgress
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -51,7 +51,7 @@ const ContactList: React.FC = () => {
         setShowModal(false);
         setContactUpdate(null);
         setAction('add');
-        if (existingContact && !isContactUpdated(existingContact, updatedContacts)) {            
+        if (existingContact && !isContactUpdated(existingContact, updatedContacts)) {
             fetch(`${fetchUrl}/${updatedContacts.id}`, {
                 method: 'PUT',
                 body: JSON.stringify(updatedContacts),
@@ -88,7 +88,7 @@ const ContactList: React.FC = () => {
         setAction('update');
         setShowModal(true);
     }
-    const isContactUpdated = (existingContact: Contact, updatedContacts:Contact) => {
+    const isContactUpdated = (existingContact: Contact, updatedContacts: Contact) => {
         return existingContact.name === updatedContacts.name &&
             existingContact.email === updatedContacts.email &&
             existingContact.phone === updatedContacts.phone &&
@@ -111,52 +111,60 @@ const ContactList: React.FC = () => {
                     <h1>Contact Management System</h1>
                 </div>
             </Item>
-            <Item>
-                <Box sx={{ display: 'flex', justifyContent: 'center', textAlign: 'center', backgroundColor: '#6c757d' }}>
-                    <Typography sx={{ minWidth: 100 }}><Button sx={{ color: '#000' }} onClick={() => handleHomeClick()} aria-label="home">Home</Button></Typography>
-                    <Typography sx={{ minWidth: 100 }}><Button sx={{ color: '#000' }} onClick={() => handleAddClick()} aria-label='addnew'>Create</Button></Typography>
+            {contacts.length === 0 ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <CircularProgress />
                 </Box>
-            </Item>
-            <Item><Paper elevation={5}>
-                {showModal && <ContactForm setShowModal={setShowModal} action={action} openModal={showModal} contactToUpdate={contactUpdate} onSubmit={action === 'add' ? handePostCall : handlePutCall} />}
-                <TableContainer >
-                    <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell sx={{ fontWeight: 800 }}>Name</TableCell>
-                                <TableCell sx={{ fontWeight: 800 }} align="right">Email</TableCell>
-                                <TableCell sx={{ fontWeight: 800 }} align="right">Phone</TableCell>
-                                <TableCell sx={{ fontWeight: 800 }} align="right">Address</TableCell>
-                                <TableCell sx={{ fontWeight: 800 }} align="right">Update</TableCell>
-                                <TableCell sx={{ fontWeight: 800 }} align="right">Delete</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {contacts.map((row) => (
-                                <TableRow
-                                    key={row.id}
-                                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                >
-                                    <TableCell component="th" scope="row">
-                                        {row.name}
-                                    </TableCell>
-                                    <TableCell align="right">{row.email}</TableCell>
-                                    <TableCell align="right">{row.phone}</TableCell>
-                                    <TableCell align="right">{row.address}</TableCell>
-                                    <TableCell align="right"><IconButton aria-label="edit" onClick={() => handleUpdateClick(row)}>
-                                        <EditIcon />
-                                    </IconButton></TableCell>
-                                    <TableCell align="right"><IconButton aria-label="delete" onClick={() => handleDeleteCall(row.id)} >
-                                        <DeleteIcon />
-                                    </IconButton></TableCell>
-                                </TableRow>
-                            ))}
+            ) : (
+                <>
+                    <Item>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', textAlign: 'center', backgroundColor: '#6c757d' }}>
+                            <Typography sx={{ minWidth: 100 }}><Button sx={{ color: '#000' }} onClick={() => handleHomeClick()} aria-label="home">Home</Button></Typography>
+                            <Typography sx={{ minWidth: 100 }}><Button sx={{ color: '#000' }} onClick={() => handleAddClick()} aria-label='addnew'>Create</Button></Typography>
+                        </Box>
+                    </Item>
+                    <Item><Paper elevation={5}>
+                        {showModal && <ContactForm setShowModal={setShowModal} action={action} openModal={showModal} contactToUpdate={contactUpdate} onSubmit={action === 'add' ? handePostCall : handlePutCall} />}
+                        <TableContainer >
+                            <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell sx={{ fontWeight: 800 }}>Name</TableCell>
+                                        <TableCell sx={{ fontWeight: 800 }} align="right">Email</TableCell>
+                                        <TableCell sx={{ fontWeight: 800 }} align="right">Phone</TableCell>
+                                        <TableCell sx={{ fontWeight: 800 }} align="right">Address</TableCell>
+                                        <TableCell sx={{ fontWeight: 800 }} align="right">Update</TableCell>
+                                        <TableCell sx={{ fontWeight: 800 }} align="right">Delete</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {contacts.map((row) => (
+                                        <TableRow
+                                            key={row.id}
+                                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                        >
+                                            <TableCell component="th" scope="row">
+                                                {row.name}
+                                            </TableCell>
+                                            <TableCell align="right">{row.email}</TableCell>
+                                            <TableCell align="right">{row.phone}</TableCell>
+                                            <TableCell align="right">{row.address}</TableCell>
+                                            <TableCell align="right"><IconButton aria-label="edit" onClick={() => handleUpdateClick(row)}>
+                                                <EditIcon />
+                                            </IconButton></TableCell>
+                                            <TableCell align="right"><IconButton aria-label="delete" onClick={() => handleDeleteCall(row.id)} >
+                                                <DeleteIcon />
+                                            </IconButton></TableCell>
+                                        </TableRow>
+                                    ))}
 
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Paper>
-            </Item>
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Paper>
+                    </Item>
+                </>
+            )}
         </Stack>
     );
 }
