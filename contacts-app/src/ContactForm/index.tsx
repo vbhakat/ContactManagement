@@ -73,7 +73,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ setShowModal, openModal, cont
     };
 
     const validatePhone = (phone: string) => {
-        const phoneRegex = /^[0-9]{10}$/;
+        const phoneRegex = /^\d{10}$/;
         return phoneRegex.test(phone);
     };
 
